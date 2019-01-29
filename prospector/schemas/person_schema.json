@@ -1,0 +1,67 @@
+{
+    "title": "Person",
+    "type": "object",
+    "properties": {
+        "created_date": {
+            "type": "string"
+        },
+        "first_name": {
+            "type": "string"
+        },
+        "last_name": {
+            "type": "string"
+        },
+        "email": {
+            "type": "string"
+        },
+        "home_phone": {
+            "type": "string"
+        },
+        "cell_phone": {
+            "type": "string"
+        },
+        "address1": {
+            "type": "string"
+        },
+        "addresss2": {
+            "type": "string"
+        },
+        "city": {
+            "type": "string"
+        },
+        "state": {
+            "type": "string"
+        },
+        "zip_code": {
+            "type": "string"
+        },
+        "zip_4": {
+            "type": "string"
+        },
+        "credit_range": {
+            "type": "string"
+        },
+        "car_year": {
+            "type": "integer",
+            "minimum": 1950
+        },
+        "car_make": {
+            "type": "string"
+        },
+        "car_model": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "created_date",
+        "first_name",
+        "last_name",
+        "email",
+        "home_phone",
+        "cell_phone",
+        "address1",
+        "city",
+        "state",
+        "zip_code"
+    ]
+}

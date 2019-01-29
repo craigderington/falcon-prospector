@@ -1,0 +1,56 @@
+{
+    "title": "IPAddress",
+    "type": "object",
+    "properties": {
+        "created_date": {
+            "type": "string"
+        },
+        "ip": {
+            "type": "string"
+        },
+        "city": {
+            "type": "string"
+        },
+        "time_zone": {
+            "type": "string"
+        },
+        "latitude": {
+            "type": "string"
+        },
+        "longitude": {
+            "type": "string"
+        },
+        "metro_code": {
+            "type": "string"
+        },
+        "dma_code": {
+            "type": "string"
+        },
+        "area_code": {
+            "type": "string"
+        },
+        "postal_code": {
+            "type": "string"
+        },
+        "region": {
+            "type": "string"
+        },
+        "region_name": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "ip",
+        "created_date",
+        "city",
+        "time_zone",
+        "latitude",
+        "longitude",
+        "metro_code",
+        "dma_code",
+        "area_code",
+        "postal_code",
+        "region",
+        "region_name"
+    ]
+}

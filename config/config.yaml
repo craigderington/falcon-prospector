@@ -1,0 +1,15 @@
+---
+  db:
+    connection: mysql+mysqlconnector://user:password@localhost:3306/prospector
+  gunicorn:
+    bind: 0.0.0.0:8888
+    workers: 2
+    timeout: 60
+  celery:
+    broker_url: amqp://
+    result_backend: rpc://
+    task_serializer: json
+    result_serializer: json
+    accept_content: ['json', 'pickle']
+    timezone: America/New_York
+    enable_utc: True
