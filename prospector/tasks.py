@@ -2,9 +2,10 @@ import aumbry
 import celery
 import time
 from datetime import datetime
-from prospector.db.models import IPAddress, Person
+from prospector.db.models import IPAddress, Person, Address
 from prospector.db.manager import DBManager
 import GeoIP
+import reverse_geocoder as rg
 from celery.utils.log import get_task_logger
 from prospector.config import AppConfig
 from sqlalchemy import exc
@@ -26,13 +27,11 @@ logger = get_task_logger(__name__)
 gi = GeoIP.open('/var/lib/geoip/GeoLiteCity.dat', GeoIP.GEOIP_INDEX_CACHE | GeoIP.GEOIP_CHECK_CACHE)
 
 
-@app.task
 def get_location(ip_addr):
     gi_lookup = gi.record_by_addr(ip_addr)
     return gi_lookup
 
 
-@app.task
 def get_ip_for_geo_locate(ip_pk_id):
     """
     Geolocate an IPAddress
@@ -40,6 +39,38 @@ def get_ip_for_geo_locate(ip_pk_id):
     :return: ip
     """
     return '.'.join(str(i) for i in range(4))
+
+
+@app.task
+def coordinates_to_address(addr_pk_id):
+    """
+    Convert coordinates to a physical address
+    :param addr_pk_id:
+    :return: none
+    """
+    rec = Address.get_addr(addr_pk_id, mgr.session)
+    coordinates = (rec.lat, rec.lon)
+    lc = rg.search(coordinates, mode=1)
+
+    if lc is not None:
+        state = lc[0]['admin1']
+        city = lc[0]['name']
+        county = lc[0]['admin2']
+        country = lc[0]['cc']
+        fields = (rec.city, rec.district, rec.region)
+
+        if all(fields):
+            logger.info('Data exists for record {}.  Skipping...'.format(str(addr_pk_id)))
+        else:
+            rec.city = city
+            rec.district = county
+            rec.region = state
+            rec.save(mgr.session)
+            logger.info('Address record {} was updated with City: {}, State: {} and County: {}'.format(
+                addr_pk_id, city, state, county
+            ))
+
+    return addr_pk_id
 
 
 @app.task
@@ -121,7 +152,7 @@ def generate_ips():
     return ip
 
 
-def geo_locate():
+def geo_locate_ip():
     """
     Test GeoIP
     ip = '142.196.239.189'

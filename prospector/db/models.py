@@ -170,6 +170,17 @@ class IPAddress(SAModel):
             session.add(self)
 
     @classmethod
+    def get_ip_addr(cls, ip_pk_id, session):
+        ip_addr = []
+        with session.begin():
+            query = session.query(cls).filter(
+                cls.id == ip_pk_id
+            )
+            ip_addr = query.first()
+
+        return ip
+
+    @classmethod
     def get_list(cls, session):
         models = []
         with session.begin():
@@ -309,6 +320,17 @@ class Address(SAModel):
     def save(self, session):
         with session.begin():
             session.add(self)
+
+    @classmethod
+    def get_addr(cls, addr_pk_id, session):
+        addr = []
+        with session.begin():
+            query = session.query(cls).filter(
+                cls.id == addr_pk_id
+            )
+            addr = query.first()
+
+        return addr
 
     @classmethod
     def get_list(cls, session):
