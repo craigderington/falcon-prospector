@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 SAModel = declarative_base()
 
 
-class Users(SAModel):
+class User(SAModel):
     """
     The Company User Class
     """

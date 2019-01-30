@@ -29,7 +29,7 @@ class AuthMiddleware(object):
                                           href='http://docs.example.com/auth')
 
     def _token_is_valid(self, token, account_id):
-        return True  # Suuuuuure it's valid...
+        return True
 
 
 def set_context(req, resp):
