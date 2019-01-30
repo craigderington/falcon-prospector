@@ -41,16 +41,26 @@ def get_ip_for_geo_locate(ip_pk_id):
     return '.'.join(str(i) for i in range(4))
 
 
+def geo_code(coordinates):
+    """
+    Reverse GeoCode from Coordinates
+    :param coordinates: int: x, int y
+    :return: location
+    """
+    location = rg.search(coordinates, mode=1)
+    return location
+
+
 @app.task
 def coordinates_to_address(addr_pk_id):
     """
-    Convert coordinates to a physical address
+    Convert Address coordinates to a deliverable address
     :param addr_pk_id:
-    :return: none
+    :return: addr_pk_id
     """
     rec = Address.get_addr(addr_pk_id, mgr.session)
     coordinates = (rec.lat, rec.lon)
-    lc = rg.search(coordinates, mode=1)
+    lc = geo_code(coordinates)
 
     if lc is not None:
         state = lc[0]['admin1']

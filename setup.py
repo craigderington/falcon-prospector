@@ -29,7 +29,8 @@ setup(
         'jsonschema>=2.5.1',
         'mysql-connector>=2.1.6',
         'sqlalchemy>=1.2.16',
-        'aumbry[yaml]>=0.7.0'
+        'aumbry[yaml]>=0.7.0',
+        'reverse_geocoder>=1.5.1'
     ],
     package_data={},
     data_files=[],
