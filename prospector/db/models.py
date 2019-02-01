@@ -341,13 +341,25 @@ class Address(SAModel):
 
         return models
 
+    @classmethod
+    def get_update_list(cls, session):
+        addr_list = []
+        with session.begin():
+            query = session.query(cls).filter(
+                cls.postcode == ''
+            ).limit(1000)
+
+            addr_list = query.all()
+
+        return addr_list
+
 
 class ZipCode(SAModel):
     """
     Zipcode Class
     :return zipcode
     """
-
+    __tablename__ = 'zipcodes'
     id = sa.Column(sa.Integer, primary_key=True)
     country_code = sa.Column(sa.String(2), nullable=False)
     postal_code = sa.Column(sa.String(20), nullable=False, unique=True)
@@ -412,4 +424,16 @@ class ZipCode(SAModel):
 
         return zipcode
 
+    @classmethod
+    def query_for_codes(cls, city, state, session):
+        zipcode = []
+        with session.begin():
+            query = session.query(cls).filter(
+                cls.state == state,
+                cls.city_name == city
+            )
+
+            zipcode = query.first()
+
+        return zipcode
 

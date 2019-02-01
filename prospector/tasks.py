@@ -1,8 +1,9 @@
 import aumbry
 import celery
 import time
+import difflib
 from datetime import datetime
-from prospector.db.models import IPAddress, Person, Address
+from prospector.db.models import IPAddress, Person, Address, ZipCode
 from prospector.db.manager import DBManager
 import GeoIP
 import reverse_geocoder as rg
@@ -72,3 +73,59 @@ def coordinates_to_address(addr_pk_id):
             ))
 
     return addr_pk_id
+
+
+@app.task
+def update_zipcode(addr_pk_id):
+    """
+    Take a given address, return a zipcode and update the address record
+    :param addr_pk_id:
+    :return:
+    """
+
+    try:
+        addr = Address.get_addr(addr_pk_id, mgr.session)
+
+        try:
+
+            data = ZipCode.query_for_codes(addr.city, addr.region, mgr.session)
+
+            if data:
+                print(data)
+
+                try:
+                    addr.postcode = data.postal_code
+                    addr.save(mgr.session)
+                    logger.info('Addr ID: {} updated with zip code: {}'.format(str(addr.id), str(data.postal_code)))
+
+                except exc.SQLAlchemyError as db_err:
+                    logger.critical('Could not save record: {}'.format(str(db_err)))
+
+        except exc.SQLAlchemyError as db_err:
+            logger.critical('Can not query the zip code data {}'.format(str(db_err)))
+
+    except exc.SQLAlchemyError as db_err:
+        logger.critical('Database error: {}'.format(str(db_err)))
+
+    # return the addr_pk_id
+    return addr_pk_id
+
+
+@app.task
+def get_addr_for_update():
+    """
+    Get the records with incomplete addresses
+    :param addr_pk_id:
+    :return: none
+    """
+
+    addr_list = Address.get_update_list(mgr.session)
+    counter = 0
+
+    for addr in addr_list:
+        update_zipcode.delay(addr.id)
+        counter += 1
+
+    logger.info('Air dropped {} into the update queue'.format(str(counter)))
+    return counter
+
