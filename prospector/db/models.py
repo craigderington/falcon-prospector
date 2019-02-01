@@ -340,3 +340,76 @@ class Address(SAModel):
             models = query.all()
 
         return models
+
+
+class ZipCode(SAModel):
+    """
+    Zipcode Class
+    :return zipcode
+    """
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    country_code = sa.Column(sa.String(2), nullable=False)
+    postal_code = sa.Column(sa.String(20), nullable=False, unique=True)
+    city_name = sa.Column(sa.String(180), nullable=False)
+    state = sa.Column(sa.String(100), nullable=False)
+    state_abbr = sa.Column(sa.String(20), nullable=False)
+    county = sa.Column(sa.String(100), nullable=False)
+    county_code = sa.Column(sa.String(20), nullable=False)
+    community = sa.Column(sa.String(100), nullable=False)
+    community_code = sa.Column(sa.String(20), nullable=False)
+    latitude = sa.Column(sa.Float, nullable=False)
+    longitude = sa.Column(sa.Float, nullable=False)
+    accuracy = sa.Column(sa.Integer)
+
+    def __init__(self, postal_code, city_name, state, county, latitude, longitude, accuracy):
+        self.postal_code = postal_code
+        self.city_name = city_name
+        self.state = state
+        self.county = county
+        self.latitude = latitude
+        self.longitude = longitude
+        self.accuracy = accuracy
+
+    def __repr__(self):
+        return '{}'.format(self.postal_code)
+
+    def as_dict(self):
+        return {
+            'postal_code': self.postal_code,
+            'city_name': self.city_name,
+            'state': self.state,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'accuracy': self.accuracy
+        }
+
+    def get_coordinates(self):
+        return '{} {}'.format(self.latitude, self.longitude)
+
+    def save(self, session):
+        with session.begin():
+            session.add(self)
+
+    @classmethod
+    def get_list(cls, session):
+        models = []
+        with session.begin():
+            query = session.query(cls)
+            models = query.all()
+
+        return models
+
+    @classmethod
+    def get_zip_code(cls, postal_code, session):
+        zipcode = []
+        with session.begin():
+            query = session.query(cls).filter(
+                cls.postal_code == postal_code
+            )
+
+            zipcode = query.first()
+
+        return zipcode
+
+
