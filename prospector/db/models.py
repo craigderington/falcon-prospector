@@ -288,6 +288,7 @@ class Address(SAModel):
     region = sa.Column(sa.String(50), nullable=True)
     postcode = sa.Column(sa.String(10), nullable=False)
     unique_id = sa.Column(sa.String(50), nullable=True)
+    processed = sa.Column(sa.Boolean, default=0, nullable=False)
 
     def __init__(self, lat, lon, number, street, unit, city, district, region, postcode, unique_id):
         self.lat = lat
@@ -345,11 +346,8 @@ class Address(SAModel):
     def get_update_list(cls, session):
         addr_list = []
         with session.begin():
-            query = session.query(cls).filter(
-                cls.postcode == ''
-            ).limit(1000)
-
-            addr_list = query.all()
+            query = session.query(cls)
+            addr_list = query.filter(cls.postcode.is_(None), cls.processed == 0).limit(1000).all()
 
         return addr_list
 
@@ -425,12 +423,12 @@ class ZipCode(SAModel):
         return zipcode
 
     @classmethod
-    def query_for_codes(cls, city, state, session):
+    def query_for_code(cls, city, state, session):
         zipcode = []
         with session.begin():
             query = session.query(cls).filter(
                 cls.state == state,
-                cls.city_name == city
+                cls.city_name.like('%' + city + '%')
             )
 
             zipcode = query.first()
