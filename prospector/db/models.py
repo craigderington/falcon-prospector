@@ -428,7 +428,7 @@ class ZipCode(SAModel):
         with session.begin():
             query = session.query(cls).filter(
                 cls.state == state,
-                cls.city_name.like('%' + city + '%')
+                cls.city_name.like(city + '%')
             )
 
             zipcode = query.first()

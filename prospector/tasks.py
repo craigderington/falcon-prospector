@@ -1,5 +1,7 @@
 import aumbry
 import celery
+import re
+import requests
 import time
 from datetime import datetime
 from prospector.db.models import IPAddress, Person, Address, ZipCode
@@ -11,6 +13,7 @@ from celery.utils.log import get_task_logger
 from prospector.config import AppConfig
 from sqlalchemy import exc
 from random import randint
+from bs4 import BeautifulSoup
 
 # database config
 cfg = aumbry.load(aumbry.FILE, AppConfig, {'CONFIG_FILE_PATH': '../config/config.yaml'})
@@ -56,6 +59,27 @@ def reverse_geo_code(coordinates):
     return location
 
 
+def parse_address_loopkup(doc):
+    """
+    Return a soupified data object from web scrape
+    :param doc:
+    :return: data
+    """
+
+    pattern = re.compile(r'\s+')
+    soup = BeautifulSoup(doc, 'html.parser')
+    data = []
+    table = soup.find('table', attrs={'class': 'Tableresultborder'})
+    rows = table.find_all('tr')
+
+    for row in rows:
+        cols = row.find_all('td')
+        cols = [ele.text.strip() for ele in cols]
+        data.append([ele for ele in cols if cols])
+
+    return data
+
+
 @app.task
 def coordinates_to_address(addr_pk_id):
     """
@@ -98,6 +122,7 @@ def update_zipcode(addr_pk_id):
 
     try:
         addr = Address.get_addr(addr_pk_id, mgr.session)
+
         if addr:
             addr_fields = (addr.city, addr.region, addr.postcode)
 
@@ -111,8 +136,8 @@ def update_zipcode(addr_pk_id):
                 except exc.SQLAlchemyError as db_err:
                     logger.critical('Could not save record: {}'.format(str(db_err)))
 
+            # address fields missing, query the zip code database for matching data
             else:
-                # address fields missing, query the zip code database for matching data
                 try:
                     data = ZipCode.query_for_code(addr.city, addr.region, mgr.session)
 
@@ -134,8 +159,44 @@ def update_zipcode(addr_pk_id):
                 except exc.SQLAlchemyError as db_err:
                     logger.critical('Can not query the zip code data {}'.format(str(db_err)))
 
+        else:
+            logger.info('Address not found.  Aborting'.format(str(addr_pk_id)))
+
     except exc.SQLAlchemyError as db_err:
         logger.critical('Database error: {}'.format(str(db_err)))
+
+    # return the addr_pk_id
+    return addr_pk_id
+
+
+@app.task
+def get_property_owner(addr_pk_id):
+    """
+    Retrieve the property owner from address lookup
+    :param addr_pk_id:
+    :return: none
+    """
+
+    addr = Address.get_addr(addr_pk_id, mgr.session)
+    api_method = 'GET'
+    hdr = {'user-agent': 'SimplePythonFoo()', 'content-type': 'text/html'}
+    m_url = 'https://www.melissa.com/lookups/addresscheck.asp?LuAd=Listware+Online&email=&exprbox=&suites=&address=&' \
+            'address2=&city=&state=&zip=&dragbox={}+{}+{}+{}+{}'.format(addr.number, addr.street, addr.city,
+                                                                        addr.region, addr.postcode)
+
+    try:
+        r = requests.request(api_method, m_url, headers=hdr)
+
+        if r.status_code == 200:
+            html_doc = r.content
+            # data = parse_address_loopkup(html_doc)
+            print(html_doc)
+
+        else:
+            logger.info('Data scraping call returned status code: {}'.format(str(r.status_code)))
+
+    except requests.HTTPError as http_err:
+        logger.info('API Call returned an error: {}'.format(str(http_err)))
 
     # return the addr_pk_id
     return addr_pk_id
